@@ -1,0 +1,79 @@
+/* ================= FILE UPLOADER – ZOHO WIDGET ================= */
+
+.uploadCard{
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(18px);
+  border-radius: 22px;
+  padding: 22px;
+  width: 420px;
+  box-shadow: 0 20px 40px rgba(0,0,0,.25);
+  margin-top: 20px;
+}
+
+/* Label */
+.uploadLabel{
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.uploadLabel span{
+  font-size: 13px;
+  font-weight: 400;
+  opacity: .8;
+  margin-left: 6px;
+}
+
+/* Hide default ugly input */
+#fileUploader{
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border-radius: 16px;
+  border: 2px dashed rgba(255,255,255,.5);
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  cursor: pointer;
+  transition: .3s;
+}
+
+/* Hover & focus */
+#fileUploader:hover{
+  background: rgba(255,255,255,.25);
+  border-color: #00c6ff;
+}
+
+#fileUploader:focus{
+  outline: none;
+  border-color: #4b7bec;
+}
+
+/* Upload button */
+.uploadBtn{
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px 0;
+  border-radius: 28px;
+  border: none;
+  cursor: pointer;
+
+  background: linear-gradient(135deg, #4b7bec, #3867d6);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+
+  transition: .3s ease;
+}
+
+.uploadBtn:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(75,123,236,.5);
+}
+
+/* Disabled state (optional) */
+.uploadBtn:disabled{
+  opacity: .6;
+  cursor: not-allowed;
+}
