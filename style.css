@@ -51,7 +51,7 @@
 }
 
 /* Upload button */
-.uploadBtn{
+#uploadBtn{
   width: 100%;
   margin-top: 18px;
   padding: 14px 0;
@@ -67,14 +67,15 @@
   transition: .3s ease;
 }
 
-.uploadBtn:hover{
+#uploadBtn:hover{
   transform: translateY(-2px);
   box-shadow: 0 10px 25px rgba(75,123,236,.5);
 }
 
 /* Disabled state (optional) */
-.uploadBtn:disabled{
+#uploadBtn:disabled{
   opacity: .6;
   cursor: not-allowed;
 }
+
 
