@@ -31,6 +31,7 @@ fileUploader.addEventListener("change", () => {
   if (fileUploader.files.length > MAX_FILES) {
     errorMsg.innerText = `You can upload maximum ${MAX_FILES} files only.`;
     fileUploader.value = "";
+    uploadBtn.disabled = true;
     return;
   }
   
@@ -39,20 +40,38 @@ fileUploader.addEventListener("change", () => {
 });
 
 /* UPLOAD FILES */
-/* UPLOAD FILES */
 uploadBtn.addEventListener("click", async () => {
-  // ... validation code ...
+  errorMsg.innerText = "";
+
+  // Get the files from the file input
+  const files = fileUploader.files;
+
+  if (!files || files.length === 0) {
+    errorMsg.innerText = "Please select at least one file.";
+    return;
+  }
+
+  if (files.length > MAX_FILES) {
+    errorMsg.innerText = `You can upload max ${MAX_FILES} files only.`;
+    return;
+  }
 
   try {
     uploadBtn.disabled = true;
     uploadBtn.textContent = "Uploading...";
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    // Convert FileList to array for easier iteration
+    const filesArray = Array.from(files);
+    
+    for (let i = 0; i < filesArray.length; i++) {
+      const file = filesArray[i];
+      
+      console.log(`Uploading file ${i + 1}/${filesArray.length}: ${file.name}`);
       
       // Convert file to base64
       const base64Data = await fileToBase64(file);
       
+      // Upload the file
       const response = await ZOHO.CRM.CONNECTION.invoke("my_connection", {
         method: "POST",
         url: `/${moduleName}/${recordId}/Attachments`,
@@ -67,9 +86,14 @@ uploadBtn.addEventListener("click", async () => {
       });
 
       console.log(`File ${i + 1} upload response:`, response);
+      
+      // Check if response contains error
+      if (response && response.data && response.data[0] && response.data[0].code === "ERROR") {
+        throw new Error(response.data[0].message || "Upload failed");
+      }
     }
 
-    alert(`Successfully uploaded ${files.length} file(s) ✔`);
+    alert(`Successfully uploaded ${filesArray.length} file(s) ✔`);
     fileUploader.value = "";
     
   } catch (err) {
