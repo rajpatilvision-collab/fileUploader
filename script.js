@@ -40,10 +40,10 @@ fileUploader.addEventListener("change", () => {
 });
 
 /* UPLOAD FILES */
+/* UPLOAD FILES - RECOMMENDED APPROACH */
 uploadBtn.addEventListener("click", async () => {
   errorMsg.innerText = "";
 
-  // Get the files from the file input
   const files = fileUploader.files;
 
   if (!files || files.length === 0) {
@@ -60,40 +60,77 @@ uploadBtn.addEventListener("click", async () => {
     uploadBtn.disabled = true;
     uploadBtn.textContent = "Uploading...";
 
-    // Convert FileList to array for easier iteration
     const filesArray = Array.from(files);
+    let successCount = 0;
+    let failedFiles = [];
     
     for (let i = 0; i < filesArray.length; i++) {
       const file = filesArray[i];
       
-      console.log(`Uploading file ${i + 1}/${filesArray.length}: ${file.name}`);
+      try {
+        console.log(`Uploading file ${i + 1}/${filesArray.length}: ${file.name} (${file.type}, ${file.size} bytes)`);
+        
+        // APPROACH 1: Try uploadFile method if available
+        if (ZOHO.CRM.API && ZOHO.CRM.API.uploadFile) {
+          const response = await ZOHO.CRM.API.uploadFile({
+            Entity: moduleName,
+            RecordId: recordId,
+            File: file
+          });
+          
+          console.log("Upload response:", response);
+          
+          if (response && response.data && response.data[0] && response.data[0].code === "SUCCESS") {
+            successCount++;
+          } else {
+            failedFiles.push(file.name);
+          }
+        } 
+        // APPROACH 2: If uploadFile doesn't work, try the attachment API
+        else if (ZOHO.CRM.API && ZOHO.CRM.API.createRecord) {
+          // First, upload the file to get attachment ID
+          const uploadResponse = await ZOHO.CRM.API.uploadFile?.({
+            File: file
+          });
+          
+          if (uploadResponse && uploadResponse.details) {
+            // Then attach it to the record
+            const attachResponse = await ZOHO.CRM.API.createRecord({
+              Entity: "Attachments",
+              APIData: {
+                Parent_Id: recordId,
+                $file_id: uploadResponse.details.id
+              }
+            });
+            
+            if (attachResponse && attachResponse.data && attachResponse.data[0].code === "SUCCESS") {
+              successCount++;
+            } else {
+              failedFiles.push(file.name);
+            }
+          }
+        }
+        
+      } catch (fileError) {
+        console.error(`Failed to upload ${file.name}:`, fileError);
+        failedFiles.push(file.name);
+      }
       
-      // Convert file to base64
-      const base64Data = await fileToBase64(file);
-      
-      // Upload the file
-      const response = await ZOHO.CRM.CONNECTION.invoke("my_connection", {
-        method: "POST",
-        url: `/${moduleName}/${recordId}/Attachments`,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          attachment: base64Data,
-          file_name: file.name,
-          file_type: file.type
-        })
-      });
-
-      console.log(`File ${i + 1} upload response:`, response);
-      
-      // Check if response contains error
-      if (response && response.data && response.data[0] && response.data[0].code === "ERROR") {
-        throw new Error(response.data[0].message || "Upload failed");
+      // Small delay between uploads
+      if (i < filesArray.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 
-    alert(`Successfully uploaded ${filesArray.length} file(s) ✔`);
+    // Show result message
+    if (successCount === filesArray.length) {
+      alert(`Successfully uploaded all ${successCount} file(s) ✔`);
+    } else if (successCount > 0) {
+      alert(`Uploaded ${successCount} of ${filesArray.length} file(s). Failed: ${failedFiles.join(', ')}`);
+    } else {
+      alert(`Failed to upload any files. Please try again.`);
+    }
+    
     fileUploader.value = "";
     
   } catch (err) {
@@ -104,17 +141,3 @@ uploadBtn.addEventListener("click", async () => {
     uploadBtn.textContent = "Upload Files";
   }
 });
-
-// Helper function to convert file to base64
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      // Remove data URL prefix (e.g., "data:image/png;base64,")
-      const base64 = reader.result.split(',')[1];
-      resolve(base64);
-    };
-    reader.onerror = error => reject(error);
-  });
-}
