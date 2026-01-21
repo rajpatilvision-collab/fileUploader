@@ -54,22 +54,23 @@ uploadBtn.addEventListener("click", async () => {
       let formData = new FormData();
       formData.append("file", files[i]);
 
-      await ZOHO.CRM.CONNECTION.invoke("my_connection", {
+      const response = await ZOHO.CRM.CONNECTION.invoke("my_connection", {
         method: "POST",
-        url: `https://www.zohoapis.com/crm/v8/${moduleName}/${recordId}/Attachments`, // ✅ FIXED
+        url: `/${moduleName}/${recordId}/Attachments`, // ✅ CORRECT
         headers: {
           "Content-Type": "multipart/form-data"
         },
         body: formData
       });
+
+      console.log("Upload response:", response);
     }
 
     alert("Files uploaded successfully ✔");
     fileUploader.value = "";
 
   } catch (err) {
-    console.error(err);
+    console.error("Upload failed:", err);
     errorMsg.innerText = "Upload failed. Please try again.";
   }
 });
-
