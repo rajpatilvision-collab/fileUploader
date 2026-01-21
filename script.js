@@ -29,7 +29,7 @@ uploadBtn.addEventListener("click", async function () {
         const response = await ZOHO.CRM.API.attachFile({
             Entity: moduleName,      // "Accounts"
             RecordID: recordId,      // record ID
-            File: fileUploader.files // 🔥 MUST BE FileList
+            file: fileUploader.files // 🔥 LOWERCASE 'file' (MANDATORY)
         });
 
         console.log("Upload response:", response);
@@ -51,3 +51,4 @@ uploadBtn.addEventListener("click", async function () {
         errorMsg.innerText = "Upload failed: " + err.message;
     }
 });
+
