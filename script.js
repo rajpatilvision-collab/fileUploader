@@ -1,19 +1,3 @@
-const uploadBtn = document.getElementById("uploadBtn");
-const fileUploader = document.getElementById("fileUploader");
-const errorMsg = document.getElementById("errorMsg");
-
-let moduleName = null;
-let recordId = null;
-
-ZOHO.embeddedApp.on("PageLoad", function (data) {
-    moduleName = data.Entity;
-    recordId = data.EntityId[0];
-
-    console.log("Ready for:", moduleName, recordId);
-});
-
-ZOHO.embeddedApp.init();
-
 uploadBtn.addEventListener("click", async function () {
     errorMsg.innerText = "";
 
@@ -22,14 +6,20 @@ uploadBtn.addEventListener("click", async function () {
         return;
     }
 
-    console.log("Selected files:", fileUploader.files);
-    console.log("Is FileList:", fileUploader.files instanceof FileList);
+    const fileObj = fileUploader.files[0];
+
+    console.log("Selected file:", fileObj);
 
     try {
         const response = await ZOHO.CRM.API.attachFile({
-            Entity: moduleName,      // "Accounts"
-            RecordID: recordId,      // record ID
-            file: fileUploader.files // 🔥 LOWERCASE 'file' (MANDATORY)
+            Entity: moduleName,   // "Accounts"
+            RecordID: recordId,
+            File: [
+                {
+                    Name: fileObj.name, // 🔥 CAPITAL N (MANDATORY)
+                    File: fileObj       // 🔥 actual File object
+                }
+            ]
         });
 
         console.log("Upload response:", response);
@@ -51,4 +41,3 @@ uploadBtn.addEventListener("click", async function () {
         errorMsg.innerText = "Upload failed: " + err.message;
     }
 });
-
