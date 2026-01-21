@@ -56,7 +56,7 @@ uploadBtn.addEventListener("click", async () => {
 
       await ZOHO.CRM.CONNECTION.invoke("my_connection", {
         method: "POST",
-        url: `/${moduleName}/${recordId}/Attachments`, // ✅ FIXED
+        url: `https://www.zohoapis.com/crm/v8/${moduleName}/${recordId}/Attachments`, // ✅ FIXED
         headers: {
           "Content-Type": "multipart/form-data"
         },
@@ -72,3 +72,4 @@ uploadBtn.addEventListener("click", async () => {
     errorMsg.innerText = "Upload failed. Please try again.";
   }
 });
+
