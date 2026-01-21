@@ -17,7 +17,6 @@ ZOHO.embeddedApp.init();
 uploadBtn.addEventListener("click", async function () {
     errorMsg.innerText = "";
 
-    // 🔴 CRITICAL CHECK
     if (!fileUploader.files || fileUploader.files.length === 0) {
         errorMsg.innerText = "Please select a file first.";
         return;
@@ -30,9 +29,9 @@ uploadBtn.addEventListener("click", async function () {
 
     try {
         const response = await ZOHO.CRM.API.attachFile({
-            Entity: moduleName,   // e.g. "Accounts"
-            RecordID: recordId,   // current record id
-            File: file            // MUST be File object
+            Entity: moduleName,      // "Accounts"
+            RecordID: recordId,      // current record id
+            File: [file]             // 🔥 MUST BE ARRAY
         });
 
         console.log("Upload response:", response);
@@ -51,6 +50,8 @@ uploadBtn.addEventListener("click", async function () {
 
     } catch (err) {
         console.error(err);
-        errorMsg.innerText = err.message || "Upload failed";
+        errorMsg.innerText = "Upload failed: " + err.message;
     }
 });
+
+
