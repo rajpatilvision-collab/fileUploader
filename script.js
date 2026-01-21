@@ -38,9 +38,6 @@ fileUploader.addEventListener("change", () => {
   // Enable button if files are selected
   uploadBtn.disabled = fileUploader.files.length === 0;
 });
-
-/* UPLOAD FILES */
-/* UPLOAD FILES - RECOMMENDED APPROACH */
 uploadBtn.addEventListener("click", async () => {
   errorMsg.innerText = "";
 
@@ -62,79 +59,72 @@ uploadBtn.addEventListener("click", async () => {
 
     const filesArray = Array.from(files);
     let successCount = 0;
-    let failedFiles = [];
     
     for (let i = 0; i < filesArray.length; i++) {
       const file = filesArray[i];
       
       try {
-        console.log(`Uploading file ${i + 1}/${filesArray.length}: ${file.name} (${file.type}, ${file.size} bytes)`);
+        console.log(`Uploading file ${i + 1}/${filesArray.length}: ${file.name}`);
         
-        // APPROACH 1: Try uploadFile method if available
-        if (ZOHO.CRM.API && ZOHO.CRM.API.uploadFile) {
-          const response = await ZOHO.CRM.API.uploadFile({
-            Entity: moduleName,
-            RecordId: recordId,
-            File: file
-          });
-          
-          console.log("Upload response:", response);
-          
-          if (response && response.data && response.data[0] && response.data[0].code === "SUCCESS") {
-            successCount++;
-          } else {
-            failedFiles.push(file.name);
+        // Create FormData object
+        const formData = new FormData();
+        formData.append("attachment", file);
+        
+        // Get OAuth token
+        const authToken = await ZOHO.CRM.CONNECTION.getAuthToken();
+        
+        // Determine the correct API endpoint based on your Zoho region
+        // For Zoho.in (India): https://www.zohoapis.in/crm/v2/
+        // For Zoho.com (Global): https://www.zohoapis.com/crm/v2/
+        const baseURL = "https://www.zohoapis.in/crm/v2/"; // Change to .in if needed
+        
+        const response = await fetch(
+          `${baseURL}${moduleName}/${recordId}/Attachments`,
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Zoho-oauthtoken ${authToken}`,
+              // Don't set Content-Type for FormData - browser sets it automatically
+            },
+            body: formData
           }
-        } 
-        // APPROACH 2: If uploadFile doesn't work, try the attachment API
-        else if (ZOHO.CRM.API && ZOHO.CRM.API.createRecord) {
-          // First, upload the file to get attachment ID
-          const uploadResponse = await ZOHO.CRM.API.uploadFile?.({
-            File: file
-          });
-          
-          if (uploadResponse && uploadResponse.details) {
-            // Then attach it to the record
-            const attachResponse = await ZOHO.CRM.API.createRecord({
-              Entity: "Attachments",
-              APIData: {
-                Parent_Id: recordId,
-                $file_id: uploadResponse.details.id
-              }
-            });
-            
-            if (attachResponse && attachResponse.data && attachResponse.data[0].code === "SUCCESS") {
-              successCount++;
-            } else {
-              failedFiles.push(file.name);
-            }
-          }
+        );
+
+        const result = await response.json();
+        console.log("Upload response:", result);
+        
+        if (response.ok && result.data && result.data[0] && result.data[0].status === "success") {
+          successCount++;
+          console.log(`✓ File uploaded successfully: ${file.name}`);
+        } else {
+          console.error(`✗ Failed to upload ${file.name}:`, result);
+          throw new Error(result.message || "Upload failed");
         }
         
       } catch (fileError) {
         console.error(`Failed to upload ${file.name}:`, fileError);
-        failedFiles.push(file.name);
+        errorMsg.innerText = `Failed to upload ${file.name}. Please try again.`;
+        // Continue with next file
       }
       
       // Small delay between uploads
       if (i < filesArray.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 
     // Show result message
-    if (successCount === filesArray.length) {
-      alert(`Successfully uploaded all ${successCount} file(s) ✔`);
-    } else if (successCount > 0) {
-      alert(`Uploaded ${successCount} of ${filesArray.length} file(s). Failed: ${failedFiles.join(', ')}`);
+    if (successCount > 0) {
+      alert(`Successfully uploaded ${successCount} of ${filesArray.length} file(s) ✔`);
     } else {
       alert(`Failed to upload any files. Please try again.`);
     }
     
+    // Clear file input
     fileUploader.value = "";
     
   } catch (err) {
-    console.error("Upload failed:", err);
+    console.error("Upload process failed:", err);
     errorMsg.innerText = `Upload failed: ${err.message}`;
   } finally {
     uploadBtn.disabled = false;
