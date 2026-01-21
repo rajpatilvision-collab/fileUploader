@@ -39,10 +39,11 @@ fileUploader.addEventListener("change", () => {
 });
 
 /* UPLOAD FILES */
+/* UPLOAD FILES */
 uploadBtn.addEventListener("click", async () => {
   errorMsg.innerText = "";
 
-  const files = fileUploader.files;
+  const files = Array.from(fileUploader.files);
 
   if (!files || files.length === 0) {
     errorMsg.innerText = "Please select at least one file.";
@@ -58,22 +59,30 @@ uploadBtn.addEventListener("click", async () => {
     uploadBtn.disabled = true;
     uploadBtn.textContent = "Uploading...";
 
+    // Get the OAuth token
+    const oauthToken = await ZOHO.CRM.CONNECTION.getAuthToken();
+    
     for (let i = 0; i < files.length; i++) {
-      let formData = new FormData();
-      // Use "attachment" as the parameter name for Zoho CRM
-      formData.append("attachment", files[i]);
-
-      // Replace "your_connection_name" with your actual connection name
-      const response = await ZOHO.CRM.API.uploadFile({
-        Entity: moduleName,
-        RecordId: recordId,
-        Body: formData
-      });
-
-      console.log(`File ${i + 1} upload response:`, response);
+      const file = files[i];
+      const formData = new FormData();
+      formData.append("attachment", file);
       
-      if (response.error) {
-        throw new Error(response.error.message || "Upload failed");
+      const response = await fetch(
+        `https://www.zohoapis.com/crm/v2/${moduleName}/${recordId}/Attachments`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Zoho-oauthtoken ${oauthToken}`,
+          },
+          body: formData
+        }
+      );
+
+      const result = await response.json();
+      console.log(`File ${i + 1} upload response:`, result);
+      
+      if (!response.ok) {
+        throw new Error(result.message || "Upload failed");
       }
     }
 
