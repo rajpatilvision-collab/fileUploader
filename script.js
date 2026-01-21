@@ -41,49 +41,32 @@ fileUploader.addEventListener("change", () => {
 /* UPLOAD FILES */
 /* UPLOAD FILES */
 uploadBtn.addEventListener("click", async () => {
-  errorMsg.innerText = "";
-
-  const files = Array.from(fileUploader.files);
-
-  if (!files || files.length === 0) {
-    errorMsg.innerText = "Please select at least one file.";
-    return;
-  }
-
-  if (files.length > MAX_FILES) {
-    errorMsg.innerText = `You can upload max ${MAX_FILES} files only.`;
-    return;
-  }
+  // ... validation code ...
 
   try {
     uploadBtn.disabled = true;
     uploadBtn.textContent = "Uploading...";
 
-    // Get the OAuth token
-    const oauthToken = await ZOHO.CRM.CONNECTION.getAuthToken();
-    
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const formData = new FormData();
-      formData.append("attachment", file);
       
-      const response = await fetch(
-        `https://www.zohoapis.com/crm/v2/${moduleName}/${recordId}/Attachments`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Zoho-oauthtoken ${oauthToken}`,
-          },
-          body: formData
-        }
-      );
+      // Convert file to base64
+      const base64Data = await fileToBase64(file);
+      
+      const response = await ZOHO.CRM.CONNECTION.invoke("my_connection", {
+        method: "POST",
+        url: `/${moduleName}/${recordId}/Attachments`,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          attachment: base64Data,
+          file_name: file.name,
+          file_type: file.type
+        })
+      });
 
-      const result = await response.json();
-      console.log(`File ${i + 1} upload response:`, result);
-      
-      if (!response.ok) {
-        throw new Error(result.message || "Upload failed");
-      }
+      console.log(`File ${i + 1} upload response:`, response);
     }
 
     alert(`Successfully uploaded ${files.length} file(s) ✔`);
@@ -97,3 +80,17 @@ uploadBtn.addEventListener("click", async () => {
     uploadBtn.textContent = "Upload Files";
   }
 });
+
+// Helper function to convert file to base64
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      // Remove data URL prefix (e.g., "data:image/png;base64,")
+      const base64 = reader.result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = error => reject(error);
+  });
+}
