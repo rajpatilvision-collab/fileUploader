@@ -56,7 +56,7 @@ uploadBtn.addEventListener("click", async () => {
 
       await ZOHO.CRM.CONNECTION.invoke("my_connection", {
         method: "POST",
-        url: `/crm/v2/${moduleName}/${recordId}/Attachments`,
+        url: `/${moduleName}/${recordId}/Attachments`, // ✅ FIXED
         headers: {
           "Content-Type": "multipart/form-data"
         },
