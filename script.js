@@ -68,7 +68,7 @@ uploadBtn.addEventListener("click", async () => {
         
         // Create FormData object
         const formData = new FormData();
-        formData.append("attachment", file);
+        formData.append("Attachments", file);
         
         // Get OAuth token
         const authToken = await ZOHO.CRM.CONNECTION.getAuthToken();
@@ -131,3 +131,4 @@ uploadBtn.addEventListener("click", async () => {
     uploadBtn.textContent = "Upload Files";
   }
 });
+
