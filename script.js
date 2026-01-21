@@ -19,6 +19,7 @@ ZOHO.embeddedApp.on("PageLoad", function (data) {
   recordId = data.EntityId[0];
 
   uploadBtn.disabled = false;
+  console.log(`Ready for: ${moduleName}/${recordId}`);
 });
 
 ZOHO.embeddedApp.init();
@@ -30,7 +31,11 @@ fileUploader.addEventListener("change", () => {
   if (fileUploader.files.length > MAX_FILES) {
     errorMsg.innerText = `You can upload maximum ${MAX_FILES} files only.`;
     fileUploader.value = "";
+    return;
   }
+  
+  // Enable button if files are selected
+  uploadBtn.disabled = fileUploader.files.length === 0;
 });
 
 /* UPLOAD FILES */
@@ -50,26 +55,36 @@ uploadBtn.addEventListener("click", async () => {
   }
 
   try {
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = "Uploading...";
+
     for (let i = 0; i < files.length; i++) {
       let formData = new FormData();
-      formData.append("file", files[i]);
+      // Use "attachment" as the parameter name for Zoho CRM
+      formData.append("attachment", files[i]);
 
-      const response = await ZOHO.CRM.CONNECTION.invoke("my_connection", {
-        method: "POST",
-        url: `${moduleName}/${recordId}/Attachments`, // ✅ EXACT FORMAT
-        body: formData                              // ✅ NO headers
+      // Replace "your_connection_name" with your actual connection name
+      const response = await ZOHO.CRM.API.uploadFile({
+        Entity: moduleName,
+        RecordId: recordId,
+        Body: formData
       });
 
-      console.log("Upload response:", response);
+      console.log(`File ${i + 1} upload response:`, response);
+      
+      if (response.error) {
+        throw new Error(response.error.message || "Upload failed");
+      }
     }
 
-    alert("Files uploaded successfully ✔");
+    alert(`Successfully uploaded ${files.length} file(s) ✔`);
     fileUploader.value = "";
-
+    
   } catch (err) {
     console.error("Upload failed:", err);
-    errorMsg.innerText = "Upload failed. Please try again.";
+    errorMsg.innerText = `Upload failed: ${err.message}`;
+  } finally {
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = "Upload Files";
   }
 });
-
-
