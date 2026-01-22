@@ -7,6 +7,8 @@ const errorMsg = document.getElementById("errorMsg");
 const fileUploader = document.getElementById("fileUploader");
 
 uploadBtn.disabled = true;
+
+/* INIT */
 ZOHO.embeddedApp.on("PageLoad", function (data) {
   if (!data || !data.Entity || !data.EntityId || !data.EntityId.length) {
     errorMsg.innerText = "Open this widget from a record page.";
@@ -22,6 +24,7 @@ ZOHO.embeddedApp.on("PageLoad", function (data) {
 
 ZOHO.embeddedApp.init();
 
+/* FILE VALIDATION */
 fileUploader.addEventListener("change", () => {
   errorMsg.innerText = "";
 
@@ -31,51 +34,63 @@ fileUploader.addEventListener("change", () => {
     uploadBtn.disabled = true;
     return;
   }
-  
+
   uploadBtn.disabled = fileUploader.files.length === 0;
 });
 
+/* UPLOAD FILES */
 uploadBtn.addEventListener("click", async () => {
   errorMsg.innerText = "";
 
-  if (!fileUploader.files || fileUploader.files.length === 0) {
-    errorMsg.innerText = "Please select a file first.";
+  const files = fileUploader.files;
+
+  if (!files || files.length === 0) {
+    errorMsg.innerText = "Please select at least one file.";
     return;
   }
 
-  const file = fileUploader.files[0];
-
-  console.log("Selected file:", file);
-
   try {
-    // ✅ Convert File to Blob
-    const blob = new Blob([file], { type: file.type });
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = "Uploading...";
 
-    const response = await ZOHO.CRM.API.attachFile({
-      Entity: moduleName,      // "Accounts"
-      RecordID: recordId,      // record ID
-      File: {
-        Name: file.name,       // filename
-        Content: blob          // 🔥 MUST be Blob
+    // 🔁 Upload files one by one
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      console.log(`Uploading file ${i + 1}:`, file.name);
+
+      // Convert File → Blob
+      const blob = new Blob([file], { type: file.type });
+
+      const response = await ZOHO.CRM.API.attachFile({
+        Entity: moduleName,
+        RecordID: recordId,
+        File: {
+          Name: file.name,
+          Content: blob
+        }
+      });
+
+      console.log(`Response for ${file.name}:`, response);
+
+      if (
+        !response ||
+        !response.data ||
+        !response.data[0] ||
+        response.data[0].code !== "SUCCESS"
+      ) {
+        throw new Error(`Upload failed for file: ${file.name}`);
       }
-    });
-
-    console.log("Upload response:", response);
-
-    if (
-      response &&
-      response.data &&
-      response.data[0] &&
-      response.data[0].code === "SUCCESS"
-    ) {
-      alert("File uploaded successfully!");
-      fileUploader.value = "";
-    } else {
-      throw new Error("Upload failed");
     }
+
+    alert("All files uploaded successfully!");
+    fileUploader.value = "";
 
   } catch (err) {
     console.error(err);
-    errorMsg.innerText = "Upload failed: " + err.message;
+    errorMsg.innerText = err.message || "Upload failed.";
+  } finally {
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = "Upload";
   }
 });
